@@ -18,7 +18,7 @@ const clearRecordsButton = document.querySelector("#clear-records");
 const exportCsvButton = document.querySelector("#export-csv");
 
 let currentResult = null;
-let records = loadRecords();
+let records = [];
 
 function getStrengthRate(rate) {
   if (rate < 0) {
@@ -181,8 +181,13 @@ function loadRecords() {
   }
 }
 
-function saveRecords() {
+function saveRecords(nextRecords = records) {
+  records = nextRecords;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+}
+
+function syncRecordsFromStorage() {
+  records = loadRecords();
 }
 
 function setError(message) {
@@ -419,8 +424,7 @@ saveRecordButton.addEventListener("click", () => {
     return;
   }
 
-  records.unshift(currentResult);
-  saveRecords();
+  saveRecords([currentResult, ...records]);
   renderRecords();
   saveRecordButton.disabled = true;
 });
@@ -432,8 +436,7 @@ recordsBody.addEventListener("click", (event) => {
     return;
   }
 
-  records = records.filter((record) => record.id !== deleteButton.dataset.id);
-  saveRecords();
+  saveRecords(records.filter((record) => record.id !== deleteButton.dataset.id));
   renderRecords();
 });
 
@@ -446,11 +449,11 @@ clearRecordsButton.addEventListener("click", () => {
     return;
   }
 
-  records = [];
-  saveRecords();
+  saveRecords([]);
   renderRecords();
 });
 
 exportCsvButton.addEventListener("click", downloadCsv);
 
+syncRecordsFromStorage();
 renderRecords();
