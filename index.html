@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OP Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <section class="panel calculator" aria-labelledby="page-title">
+      <div class="header">
+        <h1 id="page-title">OP Tracker</h1>
+        <p class="subtitle">開盤溢價率計算與短線強弱觀察工具</p>
+        <p class="rule">負數撤離，低於3不看，3到5主觀察，5到7小心追，超過7不追高。</p>
+      </div>
+
+      <form id="premium-form" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label for="stock-code">股票代號</label>
+            <input id="stock-code" name="stockCode" type="text" placeholder="例如：2330" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="stock-name">股票名稱</label>
+            <input id="stock-name" name="stockName" type="text" placeholder="例如：台積電" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="trade-date">日期</label>
+            <input id="trade-date" name="tradeDate" type="date">
+          </div>
+
+          <div class="field">
+            <label for="previous-close">昨日收盤價</label>
+            <input id="previous-close" name="previousClose" type="text" inputmode="decimal" placeholder="請輸入昨日收盤價" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="today-open">今日開盤價</label>
+            <input id="today-open" name="todayOpen" type="text" inputmode="decimal" placeholder="請輸入今日開盤價" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="price-905">9:05價格</label>
+            <input id="price-905" name="price905" type="text" inputmode="decimal" placeholder="可選填" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="price-910">9:10價格</label>
+            <input id="price-910" name="price910" type="text" inputmode="decimal" placeholder="可選填" autocomplete="off">
+          </div>
+
+          <div class="field field-wide">
+            <label for="note">備註</label>
+            <textarea id="note" name="note" rows="3" placeholder="可輸入觀察重點或盤勢備註"></textarea>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="button primary">計算</button>
+          <button type="button" id="save-record" class="button secondary" disabled>儲存紀錄</button>
+        </div>
+      </form>
+
+      <p id="error-message" class="error" role="alert" aria-live="polite"></p>
+
+      <section id="result" class="result" aria-live="polite">
+        <p class="empty-result">請輸入價格後按下計算。</p>
+      </section>
+    </section>
+
+    <section class="panel history" aria-labelledby="history-title">
+      <div class="section-title">
+        <h2 id="history-title">歷史紀錄</h2>
+        <div class="table-actions">
+          <button type="button" id="export-csv" class="button secondary small">匯出 CSV</button>
+          <button type="button" id="clear-records" class="button danger small">清空全部紀錄</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>代號</th>
+              <th>名稱</th>
+              <th>昨日收盤</th>
+              <th>今日開盤</th>
+              <th>9:05</th>
+              <th>9:10</th>
+              <th>溢價率</th>
+              <th>強弱判斷</th>
+              <th>站穩判斷</th>
+              <th>操作建議</th>
+              <th>提醒</th>
+              <th>備註</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="records-body"></tbody>
+        </table>
+      </div>
+      <p id="empty-records" class="empty-records">尚無歷史紀錄。</p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
