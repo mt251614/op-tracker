@@ -304,20 +304,20 @@ function renderRecords() {
   records.forEach((record) => {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${escapeHtml(record.tradeDate || "-")}</td>
-      <td>${escapeHtml(record.stockCode || "-")}</td>
-      <td>${escapeHtml(record.stockName || "-")}</td>
-      <td>${formatPrice(record.previousClose)}</td>
-      <td>${formatPrice(record.todayOpen)}</td>
-      <td>${formatPrice(record.price905)}</td>
-      <td>${formatPrice(record.price910)}</td>
-      <td>${escapeHtml(record.rateText)}</td>
-      <td>${escapeHtml(record.strengthLabel)}</td>
-      <td>${escapeHtml(record.holdLabel || "-")}</td>
-      <td>${escapeHtml(record.action)}</td>
-      <td>${escapeHtml(getRiskMessage(record))}</td>
-      <td>${escapeHtml(record.note || "-")}</td>
-      <td><button type="button" class="delete-record" data-id="${escapeHtml(record.id)}">刪除</button></td>
+      <td data-label="日期">${escapeHtml(record.tradeDate || "-")}</td>
+      <td data-label="代號">${escapeHtml(record.stockCode || "-")}</td>
+      <td data-label="名稱">${escapeHtml(record.stockName || "-")}</td>
+      <td data-label="昨日收盤">${formatPrice(record.previousClose)}</td>
+      <td data-label="今日開盤">${formatPrice(record.todayOpen)}</td>
+      <td data-label="9:05">${formatPrice(record.price905)}</td>
+      <td data-label="9:10">${formatPrice(record.price910)}</td>
+      <td data-label="溢價率">${escapeHtml(record.rateText)}</td>
+      <td data-label="強弱判斷">${escapeHtml(record.strengthLabel)}</td>
+      <td data-label="站穩判斷">${escapeHtml(record.holdLabel || "-")}</td>
+      <td data-label="操作建議">${escapeHtml(record.action)}</td>
+      <td data-label="提醒">${escapeHtml(getRiskMessage(record))}</td>
+      <td data-label="備註">${escapeHtml(record.note || "-")}</td>
+      <td data-label="操作"><button type="button" class="delete-record" data-id="${escapeHtml(record.id)}">刪除</button></td>
     `;
     recordsBody.appendChild(row);
   });

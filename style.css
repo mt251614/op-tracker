@@ -94,6 +94,7 @@ textarea {
   width: 100%;
   border: 1px solid #b9c4d0;
   border-radius: 6px;
+  font-size: 16px;
   color: #111827;
   background: #ffffff;
 }
@@ -301,12 +302,12 @@ tbody tr:last-child td {
 
 @media (max-width: 640px) {
   .app {
-    padding: 14px 12px 28px;
+    padding: 10px 10px 24px;
   }
 
   .calculator,
   .history {
-    padding: 20px;
+    padding: 16px;
   }
 
   .form-grid,
@@ -324,18 +325,89 @@ tbody tr:last-child td {
   }
 
   h1 {
-    font-size: 24px;
+    font-size: 26px;
   }
 
   h2 {
     font-size: 20px;
   }
 
+  .header {
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .rule {
+    padding: 10px 12px;
+    font-size: 15px;
+  }
+
+  input {
+    min-height: 48px;
+  }
+
   .button {
     width: 100%;
+    min-height: 48px;
   }
 
   .table-actions {
     width: 100%;
+  }
+
+  .table-wrap {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+  }
+
+  table,
+  thead,
+  tbody,
+  tr,
+  td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  tr {
+    padding: 12px;
+    border: 1px solid #d8e0e8;
+    border-radius: 8px;
+    background: #ffffff;
+  }
+
+  td {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid #e5ebf1;
+    word-break: break-word;
+  }
+
+  td:last-child {
+    border-bottom: 0;
+  }
+
+  td::before {
+    content: attr(data-label);
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  .delete-record {
+    width: 100%;
+    min-height: 40px;
   }
 }
