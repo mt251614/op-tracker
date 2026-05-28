@@ -104,6 +104,11 @@ input {
   padding: 10px 12px;
 }
 
+input[readonly] {
+  color: #475569;
+  background: #f1f5f9;
+}
+
 textarea {
   min-height: 86px;
   padding: 12px;
@@ -121,6 +126,31 @@ textarea:focus {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.lookup-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.lookup-button {
+  min-height: 44px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.lookup-message {
+  min-height: 20px;
+  color: #0f766e;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.lookup-hint {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .actions {
@@ -245,7 +275,7 @@ textarea:focus {
 
 table {
   width: 100%;
-  min-width: 1320px;
+  min-width: 1500px;
   border-collapse: collapse;
 }
 
@@ -349,6 +379,10 @@ tbody tr:last-child td {
   .button {
     width: 100%;
     min-height: 48px;
+  }
+
+  .lookup-row {
+    grid-template-columns: 1fr;
   }
 
   .table-actions {

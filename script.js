@@ -1,8 +1,35 @@
 const STORAGE_KEY = "open-premium-rate-records";
+const TWSE_QUOTE_URL = "https://mis.twse.com.tw/stock/api/getStockInfo.jsp";
+
+const FALLBACK_STOCKS = [
+  { code: "1101", name: "台泥", market: "上市" },
+  { code: "1216", name: "統一", market: "上市" },
+  { code: "1301", name: "台塑", market: "上市" },
+  { code: "2002", name: "中鋼", market: "上市" },
+  { code: "2303", name: "聯電", market: "上市" },
+  { code: "2317", name: "鴻海", market: "上市" },
+  { code: "2330", name: "台積電", market: "上市" },
+  { code: "2412", name: "中華電", market: "上市" },
+  { code: "2454", name: "聯發科", market: "上市" },
+  { code: "2603", name: "長榮", market: "上市" },
+  { code: "2881", name: "富邦金", market: "上市" },
+  { code: "2882", name: "國泰金", market: "上市" },
+  { code: "3008", name: "大立光", market: "上市" },
+  { code: "3711", name: "日月光投控", market: "上市" },
+  { code: "4938", name: "和碩", market: "上市" },
+  { code: "5347", name: "世界", market: "上櫃" },
+  { code: "5483", name: "中美晶", market: "上櫃" },
+  { code: "6187", name: "萬潤", market: "上櫃" },
+  { code: "6488", name: "環球晶", market: "上櫃" },
+  { code: "8069", name: "元太", market: "上櫃" }
+];
 
 const form = document.querySelector("#premium-form");
 const stockCodeInput = document.querySelector("#stock-code");
 const stockNameInput = document.querySelector("#stock-name");
+const marketInput = document.querySelector("#market");
+const lookupStockButton = document.querySelector("#lookup-stock");
+const lookupMessage = document.querySelector("#lookup-message");
 const tradeDateInput = document.querySelector("#trade-date");
 const previousCloseInput = document.querySelector("#previous-close");
 const todayOpenInput = document.querySelector("#today-open");
@@ -19,6 +46,177 @@ const exportCsvButton = document.querySelector("#export-csv");
 
 let currentResult = null;
 let records = [];
+let stocks = FALLBACK_STOCKS;
+
+async function loadStocks() {
+  try {
+    const response = await fetch("data/stocks.json", { cache: "no-store" });
+
+    if (!response.ok) {
+      throw new Error("stocks json failed");
+    }
+
+    const data = await response.json();
+
+    if (Array.isArray(data)) {
+      stocks = data;
+    }
+  } catch (error) {
+    stocks = FALLBACK_STOCKS;
+  }
+}
+
+async function fetchStockQuote(stockCode) {
+  const code = stockCode.trim();
+
+  if (code === "") {
+    throw new Error("EMPTY_CODE");
+  }
+
+  const tseQuote = await fetchQuoteByMarket(code, "tse");
+
+  if (tseQuote) {
+    return tseQuote;
+  }
+
+  const otcQuote = await fetchQuoteByMarket(code, "otc");
+
+  if (otcQuote) {
+    return otcQuote;
+  }
+
+  return null;
+}
+
+async function fetchQuoteByMarket(stockCode, exchange) {
+  const exCh = `${exchange}_${stockCode}.tw`;
+  const url = `${TWSE_QUOTE_URL}?ex_ch=${encodeURIComponent(exCh)}&json=1&delay=0&_=${Date.now()}`;
+  const response = await fetch(url, { cache: "no-store" });
+
+  if (!response.ok) {
+    throw new Error("QUOTE_REQUEST_FAILED");
+  }
+
+  const data = await response.json();
+  const quote = data && Array.isArray(data.msgArray) ? data.msgArray[0] : null;
+
+  if (!quote || quote.c !== stockCode) {
+    return null;
+  }
+
+  return quote;
+}
+
+function normalizeMarket(exchange) {
+  if (exchange === "tse") {
+    return "上市";
+  }
+
+  if (exchange === "otc") {
+    return "上櫃";
+  }
+
+  return "未找到";
+}
+
+function isValidQuotePrice(value) {
+  if (value === undefined || value === null) {
+    return false;
+  }
+
+  const text = String(value).trim();
+
+  if (text === "" || text === "-") {
+    return false;
+  }
+
+  const price = Number(text);
+  return Number.isFinite(price) && price > 0;
+}
+
+function lookupLocalStock(showEmptyMessage = true) {
+  const code = stockCodeInput.value.trim();
+
+  lookupMessage.textContent = "";
+
+  if (code === "") {
+    marketInput.value = "未找到";
+
+    if (showEmptyMessage) {
+      lookupMessage.textContent = "請輸入股票代碼";
+    }
+
+    return null;
+  }
+
+  const stock = stocks.find((item) => item.code === code);
+
+  if (!stock) {
+    marketInput.value = "未找到";
+    lookupMessage.textContent = "查無此股票代碼，請手動輸入";
+    return null;
+  }
+
+  stockNameInput.value = stock.name;
+  marketInput.value = stock.market;
+  lookupMessage.textContent = `已帶入：${stock.name}（${stock.market}）`;
+  return stock;
+}
+
+async function handleStockQuoteLookup() {
+  const code = stockCodeInput.value.trim();
+
+  clearError();
+  lookupMessage.textContent = "";
+
+  if (code === "") {
+    lookupMessage.textContent = "請輸入股票代碼";
+    return;
+  }
+
+  lookupStockButton.disabled = true;
+  lookupStockButton.textContent = "查詢中";
+
+  try {
+    const quote = await fetchStockQuote(code);
+
+    if (!quote) {
+      lookupLocalStock(false);
+      lookupMessage.textContent = "查無資料，請手動輸入昨日收盤價與今日開盤價";
+      return;
+    }
+
+    stockNameInput.value = quote.n || stockNameInput.value;
+    marketInput.value = normalizeMarket(quote.ex);
+
+    if (isValidQuotePrice(quote.y)) {
+      previousCloseInput.value = quote.y;
+    }
+
+    if (isValidQuotePrice(quote.o)) {
+      todayOpenInput.value = quote.o;
+    }
+
+    if (!isValidQuotePrice(quote.y)) {
+      lookupMessage.textContent = "昨日收盤價無效，請手動輸入";
+      return;
+    }
+
+    if (!isValidQuotePrice(quote.o)) {
+      lookupMessage.textContent = "今日開盤價不存在或尚未開盤，請手動輸入";
+      return;
+    }
+
+    lookupMessage.textContent = `已帶入：${quote.n}（${marketInput.value}），並完成計算`;
+    calculateAndRender();
+  } catch (error) {
+    lookupLocalStock(false);
+    lookupMessage.textContent = "自動查詢失敗，請手動輸入";
+  } finally {
+    lookupStockButton.disabled = false;
+    lookupStockButton.textContent = "查詢股票";
+  }
+}
 
 function getStrengthRate(rate) {
   if (rate < 0) {
@@ -107,35 +305,23 @@ function getIntegratedAction(rate, holdStatus) {
     return "直接撤離";
   }
 
+  if (rate === 0) {
+    return "不觀察";
+  }
+
   if (rate < 3) {
-    return "不列入主要觀察";
+    return "觀望";
   }
 
   if (rate <= 5) {
-    if (holdStatus.isStable === true) {
-      return "主要觀察";
-    }
-
-    if (holdStatus.isStable === false) {
-      return "取消觀察";
-    }
-
-    return "等待站穩判斷";
+    return holdStatus.isStable === false ? "取消觀察" : "主要觀察";
   }
 
   if (rate <= 7) {
-    if (holdStatus.isStable === true) {
-      return "謹慎觀察";
-    }
-
-    if (holdStatus.isStable === false) {
-      return "不追高";
-    }
-
-    return "等待站穩判斷";
+    return holdStatus.isStable === false ? "不追高" : "謹慎觀察";
   }
 
-  return "過熱，不追高";
+  return "不追高";
 }
 
 function parseRequiredPrice(value) {
@@ -205,6 +391,7 @@ function getFormData() {
   return {
     stockCode: stockCodeInput.value.trim(),
     stockName: stockNameInput.value.trim(),
+    market: marketInput.value.trim() || "未找到",
     tradeDate: tradeDateInput.value,
     previousCloseText: previousCloseInput.value,
     todayOpenText: todayOpenInput.value,
@@ -252,6 +439,7 @@ function calculatePremium(formData) {
       id: createRecordId(),
       stockCode: formData.stockCode,
       stockName: formData.stockName,
+      market: formData.market,
       tradeDate: formData.tradeDate,
       previousClose: previousClose.value,
       todayOpen: todayOpen.value,
@@ -268,6 +456,21 @@ function calculatePremium(formData) {
       createdAt: new Date().toISOString()
     }
   };
+}
+
+function calculateAndRender() {
+  clearError();
+  const calculation = calculatePremium(getFormData());
+
+  if (calculation.error) {
+    setError(calculation.error);
+    return false;
+  }
+
+  currentResult = calculation.value;
+  saveRecordButton.disabled = false;
+  renderResult(currentResult);
+  return true;
 }
 
 function renderResult(record) {
@@ -309,9 +512,11 @@ function renderRecords() {
   records.forEach((record) => {
     const row = document.createElement("tr");
     row.innerHTML = `
+      <td data-label="建立時間">${escapeHtml(formatDateTime(record.createdAt))}</td>
       <td data-label="日期">${escapeHtml(record.tradeDate || "-")}</td>
-      <td data-label="代號">${escapeHtml(record.stockCode || "-")}</td>
+      <td data-label="代碼">${escapeHtml(record.stockCode || "-")}</td>
       <td data-label="名稱">${escapeHtml(record.stockName || "-")}</td>
+      <td data-label="市場別">${escapeHtml(record.market || "未找到")}</td>
       <td data-label="昨日收盤">${formatPrice(record.previousClose)}</td>
       <td data-label="今日開盤">${formatPrice(record.todayOpen)}</td>
       <td data-label="9:05">${formatPrice(record.price905)}</td>
@@ -343,6 +548,22 @@ function formatPrice(value) {
   });
 }
 
+function formatDateTime(value) {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString("zh-TW", {
+    hour12: false
+  });
+}
+
 function createRecordId() {
   if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
     return globalThis.crypto.randomUUID();
@@ -365,19 +586,21 @@ function downloadCsv() {
     return;
   }
 
-  const headers = ["日期", "股票代號", "股票名稱", "昨日收盤價", "今日開盤價", "9:05價格", "9:10價格", "開盤溢價率", "強弱判斷", "站穩判斷", "操作建議", "風險提醒", "備註"];
+  const headers = ["建立時間", "日期", "股票代碼", "股票名稱", "市場別", "昨日收盤價", "今日開盤價", "開盤溢價率", "強弱判斷", "操作建議", "9:05價格", "9:10價格", "站穩判斷", "風險提醒", "備註"];
   const rows = records.map((record) => [
+    formatDateTime(record.createdAt),
     record.tradeDate,
     record.stockCode,
     record.stockName,
+    record.market || "未找到",
     record.previousClose,
     record.todayOpen,
-    record.price905 ?? "",
-    record.price910 ?? "",
     record.rateText,
     record.strengthLabel,
-    record.holdLabel,
     record.action,
+    record.price905 ?? "",
+    record.price910 ?? "",
+    record.holdLabel,
     getRiskMessage(record),
     record.note
   ]);
@@ -402,20 +625,20 @@ function toCsvCell(value) {
   return `"${text.replaceAll('"', '""')}"`;
 }
 
+lookupStockButton.addEventListener("click", handleStockQuoteLookup);
+
+stockCodeInput.addEventListener("blur", () => {
+  lookupLocalStock(false);
+});
+
+stockCodeInput.addEventListener("input", () => {
+  marketInput.value = "未找到";
+  lookupMessage.textContent = "";
+});
+
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  clearError();
-
-  const calculation = calculatePremium(getFormData());
-
-  if (calculation.error) {
-    setError(calculation.error);
-    return;
-  }
-
-  currentResult = calculation.value;
-  saveRecordButton.disabled = false;
-  renderResult(currentResult);
+  calculateAndRender();
 });
 
 saveRecordButton.addEventListener("click", () => {
@@ -455,5 +678,10 @@ clearRecordsButton.addEventListener("click", () => {
 
 exportCsvButton.addEventListener("click", downloadCsv);
 
-syncRecordsFromStorage();
-renderRecords();
+async function init() {
+  syncRecordsFromStorage();
+  renderRecords();
+  await loadStocks();
+}
+
+init();

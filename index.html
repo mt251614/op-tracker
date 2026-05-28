@@ -18,13 +18,23 @@
       <form id="premium-form" novalidate>
         <div class="form-grid">
           <div class="field">
-            <label for="stock-code">股票代號</label>
-            <input id="stock-code" name="stockCode" type="text" placeholder="例如：2330" autocomplete="off">
+            <label for="stock-code">股票代碼</label>
+            <div class="lookup-row">
+              <input id="stock-code" name="stockCode" type="text" placeholder="例如：2330" autocomplete="off">
+              <button type="button" id="lookup-stock" class="button secondary lookup-button">查詢股票</button>
+            </div>
+            <p class="lookup-hint">自動查詢資料可能受交易時間、休市日或資料來源限制影響；若查詢失敗，可手動輸入。</p>
+            <p id="lookup-message" class="lookup-message" aria-live="polite"></p>
           </div>
 
           <div class="field">
             <label for="stock-name">股票名稱</label>
-            <input id="stock-name" name="stockName" type="text" placeholder="例如：台積電" autocomplete="off">
+            <input id="stock-name" name="stockName" type="text" placeholder="可手動輸入" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="market">市場別</label>
+            <input id="market" name="market" type="text" value="未找到" readonly>
           </div>
 
           <div class="field">
@@ -84,9 +94,11 @@
         <table>
           <thead>
             <tr>
+              <th>建立時間</th>
               <th>日期</th>
-              <th>代號</th>
+              <th>代碼</th>
               <th>名稱</th>
+              <th>市場別</th>
               <th>昨日收盤</th>
               <th>今日開盤</th>
               <th>9:05</th>
